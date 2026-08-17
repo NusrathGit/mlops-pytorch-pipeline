@@ -1,0 +1,42 @@
+# ============================================================
+# Stage 1: builder - installs dependencies, including anything
+# needed to build them (kept out of the final image).
+# ============================================================
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# build-essential is only needed to compile some Python packages;
+# it is NOT copied into the final training stage below, keeping
+# the final image smaller.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements/train.txt .
+# --user installs into /root/.local, which we copy (not the whole
+# filesystem) into the next stage.
+RUN pip install --no-cache-dir --user -r train.txt
+
+# ============================================================
+# Stage 2: training runtime - only what's needed to actually run
+# src/train.py. No compilers, no apt cache, smaller final image.
+# ============================================================
+FROM python:3.11-slim AS training
+
+WORKDIR /app
+
+# Bring in the already-installed packages from the builder stage.
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Application code and config - copied last so that dependency
+# layers above stay cached across code-only changes.
+COPY src/ ./src/
+COPY configs/ ./configs/
+
+# Unbuffered stdout so JSON-lines training logs show up immediately
+# (important for `kubectl logs -f` and `docker logs -f`).
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python", "src/train.py"]
