@@ -1,0 +1,85 @@
+# --- PersistentVolumeClaims used by the training Job (and later read by
+# the serving Deployment for /app/checkpoints) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-pvc
+  namespace: ml-training
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: checkpoints-pvc
+  namespace: ml-training
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# --- The training Job itself ---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pytorch-training
+  namespace: ml-training
+spec:
+  backoffLimit: 2          # retry up to 2 times on failure before giving up
+  template:
+    spec:
+      restartPolicy: Never  # Jobs must use Never or OnFailure, not Always
+      containers:
+        - name: training
+          image: mlops-train:v1
+          imagePullPolicy: IfNotPresent   # use the local image built with `docker build`
+          resources:
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/configs
+            - name: data-volume
+              mountPath: /app/data
+            - name: checkpoints-volume
+              mountPath: /app/checkpoints
+      volumes:
+        - name: config-volume
+          configMap:
+            name: training-config
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: data-pvc
+        - name: checkpoints-volume
+          persistentVolumeClaim:
+            claimName: checkpoints-pvc
+
+# ------------------------------------------------------------------
+# BONUS - GPU training (uncomment to use on a GPU-enabled node):
+#
+#          resources:
+#            requests:
+#              cpu: "2"
+#              memory: "4Gi"
+#              nvidia.com/gpu: 1
+#            limits:
+#              cpu: "2"
+#              memory: "4Gi"
+#              nvidia.com/gpu: 1
+#      nodeSelector:
+#        gpu: "true"
+#      tolerations:
+#        - key: "nvidia.com/gpu"
+#          operator: "Exists"
+#          effect: "NoSchedule"
+# ------------------------------------------------------------------
