@@ -99,6 +99,7 @@ def main():
     train_loader, val_loader = get_dataloaders(
         data_dir=config["data"]["data_dir"],
         batch_size=config["training"]["batch_size"],
+        dataset_name=config["data"]["dataset"],
     )
 
     optimizer = torch.optim.Adam(

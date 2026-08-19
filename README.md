@@ -204,3 +204,26 @@ This repo follows a `main` / `develop` / `feature/*` branching model:
 - `develop` - integration branch, created from `main`
 - `feature/<name>` - one branch per unit of work, merged into `develop` via PR
 
+## Secrets management
+
+`k8s/secret.yaml` in this repo contains a **placeholder** value
+(`API_KEY: change-me-in-production`) - it is committed only to demonstrate
+the Secret manifest structure required by the assignment. No real
+credential is present.
+
+In a real deployment, secrets should never be committed to Git, even as
+placeholders in production overlays. Instead:
+
+- Create the Secret directly against the cluster, without a file:
+```bash
+  kubectl create secret generic serving-secret \
+    --from-literal=API_KEY=<real-value> \
+    -n ml-training
+```
+- Or use a tool designed for GitOps-safe secrets, such as
+  [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) or
+  [External Secrets Operator](https://external-secrets.io/), which let the
+  *encrypted* form live in Git while the plaintext only ever exists inside
+  the cluster.
+- Keep `k8s/secret.yaml` (or an equivalent local-only file) out of version
+  control via `.gitignore` once it holds a real value.

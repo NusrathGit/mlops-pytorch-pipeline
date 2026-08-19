@@ -27,9 +27,13 @@ from model import get_model
 MODEL_PATH = os.environ.get("MODEL_PATH", "/app/checkpoints/classifier_v1.pt")
 PORT = int(os.environ.get("PORT", 8080))
 
+# CLASS_NAMES = [
+#     "airplane", "automobile", "bird", "cat", "deer",
+#     "dog", "frog", "horse", "ship", "truck",
+# ]
 CLASS_NAMES = [
-    "airplane", "automobile", "bird", "cat", "deer",
-    "dog", "frog", "horse", "ship", "truck",
+    "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
+    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot",
 ]
 
 PREPROCESS = transforms.Compose([

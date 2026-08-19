@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Data & model artifacts (large, regenerable - never commit)
+data/
+checkpoints/
+*.pt
+*.pth
+
+# OS / editor
+.vscode/
+.DS_Store
+
+# Secrets - never commit real values
+*.env
